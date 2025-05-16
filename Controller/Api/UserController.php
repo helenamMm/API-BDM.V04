@@ -200,5 +200,149 @@ class UserController extends BaseController
             }
     
     }
+
+    public function manageContactosAction(){
+        $strErrorDesc = '';
+        $responseData = '';
+    
+        try {
+            $requestMethod = $_SERVER["REQUEST_METHOD"];
+            $inputData = json_decode(file_get_contents("php://input"), true);
+    
+            if (strtoupper($requestMethod) != 'POST') {
+                throw new Exception("Method not supported.");
+            }
+    
+            if (!isset($inputData['operacion'])) {
+                throw new Exception("Se necesita un número de operación.");
+            }
+    
+            if (!isset($inputData['correo']) || !isset($inputData['contacto'])) {
+                throw new Exception("Invalid input.");
+            }
+    
+            $operacion = intval($inputData['operacion']);
+            $correo = $inputData['correo'];
+            $contacto = $inputData['contacto'];
+
+            if(isset($inputData['bloqueado']) && !empty($inputData['bloqueado'])){
+                //ando aqui dentro de bloqueado
+                $bloqueado = $inputData['bloqueado'];
+            }
+            else{
+                $bloqueado = NULL;
+            }
+                        
+    
+            $userModel = new UserModel();
+    
+            switch ($operacion) {
+                case 1: // Agregar contacto
+                    try {
+                      //echo "estoy dentro";
+                        $result = $userModel->manageContacto($operacion, $correo, $contacto, $bloqueado);
+                        
+                        if ($result) {
+                            $responseData = json_encode(["message" => "Contacto agregado exitosamente."]);
+                        } else {
+                            throw new Exception("Fallo al insertar contacto.");
+                        }
+                    } catch (Exception $e) {
+                        $strErrorDesc = $e->getMessage();
+                        $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
+                    }
+    
+                    if (!$strErrorDesc) {
+                        $this->sendOutput($responseData, ['Content-Type: application/json', 'HTTP/1.1 201 Created']);
+                    } else {
+                        $this->sendOutput(json_encode(["error" => $strErrorDesc]), ['Content-Type: application/json', $strErrorHeader]);
+                    }
+                    break;
+    
+                case 2: // Eliminar contacto
+                    try {
+                        $result = $userModel->manageContacto($operacion, $correo, $contacto, $bloqueado);
+    
+                        if ($result) {
+                            $responseData = json_encode(["message" => "Contacto eliminado exitosamente."]);
+                        } else {
+                            throw new Exception("Fallo al eliminar contacto.");
+                        }
+                    } catch (Exception $e) {
+                        $strErrorDesc = $e->getMessage();
+                        $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
+                    }
+    
+                    if (!$strErrorDesc) {
+                        $this->sendOutput($responseData, ['Content-Type: application/json', 'HTTP/1.1 200 OK']);
+                    } else {
+                        $this->sendOutput(json_encode(["error" => $strErrorDesc]), ['Content-Type: application/json', $strErrorHeader]);
+                    }
+                    break;
+                case 3: //bloquear contacto
+                    try {
+                        $result = $userModel->manageContacto($operacion, $correo, $contacto, $bloqueado);
+                        $arrContactos = $userModel->getContacto($correo);
+                        $responseData = json_encode(["contactos" => $arrContactos], JSON_UNESCAPED_UNICODE); //MUCHOS REGISTROS  
+                    } catch (Exception $e) {
+                        $strErrorDesc = $e->getMessage();
+                        $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
+                    }
+    
+                    if (!$strErrorDesc) {
+                        $this->sendOutput(
+                            $responseData,
+                            array('Content-Type: application/json', 'HTTP/1.1 200 OK')
+                        );
+                    } else {
+                        $this->sendOutput(json_encode(["error" => $strErrorDesc]), ['Content-Type: application/json', $strErrorHeader]);
+                    }
+                    break;
+    
+                default:
+                    throw new Exception("Invalid operation type.");
+            }
+        } catch (Exception $e) {
+            $strErrorDesc = $e->getMessage();
+            $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
+            $this->sendOutput(json_encode(["error" => $strErrorDesc]), ['Content-Type: application/json', $strErrorHeader]);
+        }
+    }
+
+    public function listFavoritoAction(){
+        $strErrorDesc = '';
+            $responseData = '';
+            try {
+            $requestMethod = $_SERVER["REQUEST_METHOD"];
+            $inputData = json_decode(file_get_contents("php://input"), true);
+    
+            if (strtoupper($requestMethod) != 'POST') {
+                throw new Exception("Method not supported.");
+            }
+    
+            if (!isset($inputData['correo']) ) {
+                throw new Exception("Invalid input.");
+            }
+    
+            $correo = $inputData['correo'];
+            
+            $userModel = new UserModel();
+            $arrContactos = $userModel->getContacto($correo);
+            $responseData = json_encode(["contactos" => $arrContactos], JSON_UNESCAPED_UNICODE); //MUCHOS REGISTROS  
+     
+            } catch (Error $e) {
+                $strErrorDesc = $e->getMessage().'Something went wrong! Please contact support.';
+                $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
+            }
+        
+            if (!$strErrorDesc) {
+                $this->sendOutput(
+                    $responseData,
+                    array('Content-Type: application/json', 'HTTP/1.1 200 OK')
+                );
+            } else {
+                $this->sendOutput(json_encode(["error" => $strErrorDesc]), ['Content-Type: application/json', $strErrorHeader]);
+            }
+      }
 }
 ?>

@@ -1,68 +1,34 @@
 <?php
 class FavoritoModel extends Database
 {
-  public function insertFavorito($id_publicacion, $correo)
-  {
-    $query1 = "INSERT INTO Favoritos(id_usuarios, id_publicacion)
-        VALUES(?, ?);";
-    $params1 = [
-      ['s', $correo],
-      ["i", $id_publicacion]
-    ];
+  public function manageFavorito($operacion, $correo, $id_publicacion)
+    {
+     // echo "estoy dentro2";
+        $query = "CALL manage_favoritos(?, ?, ?);";
+        $params = [
+        ["i", $operacion],
+        ["s", $correo], 
+        ["i", $id_publicacion]
+        ];
+        //print($operacion);
+        return $this->insert($query, $params);  
+    }
 
-    $this->insert($query1, $params1); 
-
-    $query2 = "UPDATE publicacion
-        SET num_likes = (num_likes + 1)
-        WHERE id_publicacion = ?;";
-    $params2 = [["i", $id_publicacion]];
-    
-    $this->insert($query2, $params2);
-    
-    return true;
-    /* $query = "CALL agregar_favoritos(?, ?)";
+  public function getFavorito($correo){
+    $query = "CALL list_favoritos(?)";
     $params = [
-      ["i", $id_publicacion], 
-      ["s", $correo]
+        ["s", $correo] 
     ];
-    return $this->insert($query, $params); */
+    return $this->selectMpFilasMasivas($query, $params); //aqui puede haber error 
   }
-
-  public function getFavorito($correo)
-  {
-    $query = "CALL mostrar_favoritos_por_usuarios(?)";
-    $params = ["s", $correo];
-
-    return $this->select($query, $params);
-  }
-
-  public function deleteFavorito($id_publicacion, $correo)
-  {
-    $query1 = "UPDATE publicacion
-        SET
-        num_likes = num_likes - 1
-        WHERE id_publicacion = ?;";
-    $params1 = [["i", $id_publicacion]];
-    
-    $this->insert($query1, $params1);
-
-    $query2 = "DELETE FROM Favoritos
-    WHERE  id_usuarios = ? AND id_publicacion = ?;";
-    $params2 = [
-      ['s', $correo],
-      ["i", $id_publicacion]
-    ];
-    $this->insert($query2, $params2);
-
-    return true;
-    
-    /* $query = "CALL  eliminar_favorito(?, ?)";
+  public function getTotalFavoritos($correo) {
+    $query = "SELECT total_favoritos(?) AS total";
     $params = [
-      ["i", $id_publicacion], 
-      ['s', $correo]
+        ["s", $correo]
     ];
-    return $this->insert($query, $params); */
-  }
+
+   return $this->select($query, $params);
+}
 }
 ?>
 
