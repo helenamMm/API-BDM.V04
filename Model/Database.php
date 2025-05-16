@@ -16,8 +16,7 @@ class Database
         }			
     }
 
-    public function select($query = "" , $params = [])
-    {
+    public function select($query = "" , $params = []){
         try {
             $stmt = $this->executeStatement( $query , $params );
             $result = $stmt->get_result()->fetch_assoc();  
@@ -40,41 +39,45 @@ class Database
         return false;
     }
 
-    public function selectMultipleParams($query = "", $params = [])
-    {
+    public function selectMultipleParams($query = "", $params = []){
         try {
             $stmt = $this->executeMultipleParams($query, $params);
-            $result = $stmt->get_result()->fetch_assoc();		
+            $result = $stmt->get_result()->fetch_assoc();  
             $stmt->close();
-    
-            //print("fuera if");
-            /* if ($result && isset($result['foto_perfil'])) {
-                //print("dentro if");
-                $result['foto_perfil'] = base64_encode($result['foto_perfil']);
-            } */
+        
             if ($result && isset($result['foto_perfil'])) {
-                $finfo = finfo_open(FILEINFO_MIME_TYPE); 
-                $mime_type = finfo_buffer($finfo, $result['foto_perfil']); // Detect MIME type of the image content
-                finfo_close($finfo); 
-            
-                $base64_image = base64_encode($result['foto_perfil']);
-                
-                // Construct the data URI with the correct MIME type
-                $result['foto_perfil'] = 'data:' . $mime_type . ';base64,' . $base64_image;
+            $result['foto_perfil'] = base64_encode($result['foto_perfil']);
             }
-            print_r($result['foto_perfil']);
+            elseif($result && isset($result['imagen'])){
+            $result['imagen'] = base64_encode($result['imagen']);
+            }
             return $result;
-            
-    
+            }catch (Exception $e){
+            throw new Exception($e->getMessage());
+            return false;
+            }   
+    }
+    public function selectMpFilasMasivas($query = "", $params = []){//una disculpa por el nombre de esta funcion 
+        try {
+            $stmt = $this->executeMultipleParams($query, $params);
+            $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);			
+            $stmt->close();
+            foreach ($result as &$row) {
+                if (isset($row['foto_perfil'])) {
+                    $row['foto_perfil'] = base64_encode($row['foto_perfil']);
+                }
+                else if(isset($row['imagen']) && !empty($row['imagen'])){
+                    $row['imagen'] = base64_encode($row['imagen']);
+                }
+            }
             return $result;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
         return false;
     }
-    
-    public function insert($query = "" , $params = [])
-    {
+
+    public function insert($query = "" , $params = []){
         try {
             $stmt = $this->executeMultipleParams($query, $params);          
             $stmt->close();
@@ -85,8 +88,7 @@ class Database
         return false;
     }
     
-    private function executeStatement($query = "" , $params = [])
-    {
+    private function executeStatement($query = "" , $params = []){
         try {
             $stmt = $this->connection->prepare( $query );
             if($stmt === false) {
@@ -101,8 +103,7 @@ class Database
             throw New Exception( $e->getMessage() );
         }	
     }
-    public function delete($query = "", $params = [])
-    {
+    public function delete($query = "", $params = []){
         try {
         
         $stmt = $this->executeMultipleParams($query, $params);
@@ -164,7 +165,7 @@ class Database
 
            /* if (!$stmt->execute()) {
                 throw new Exception("Error executing statement: " . $this->connection->error);
-            }  */
+            }  */ //este debuggeador no fall namas que luego te marca error de que se ducplico y namas no 
 
             return $stmt;
         } catch (Exception $e) {
@@ -172,9 +173,5 @@ class Database
         }
     }
 
-    public function getLastInsertId()
-    {
-        return $this->connection->insert_id; 
-    }
 }
 ?>
